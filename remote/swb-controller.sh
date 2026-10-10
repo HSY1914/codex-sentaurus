@@ -76,7 +76,7 @@ status() {
     swb=$(latest_swb_status)
     if process_alive "$pid"; then process=running; else process=stopped; fi
     printf 'STATE=%s\nPROCESS=%s\nPID=%s\nSWB_STATUS=%s\n' "$run_state" "$process" "$pid" "$swb"
-    for key in runId project startedAt finishedAt exitCode attempt log; do
+    for key in runId project startedAt updatedAt finishedAt exitCode attempt log recovery swbStatus; do
         value=$(get_value "$current" "$key")
         [[ -n "$value" ]] && printf '%s=%s\n' "$(printf '%s' "$key" | tr '[:lower:]' '[:upper:]')" "$value"
     done
@@ -93,6 +93,10 @@ worker() {
     local project_path=$1 state_path=$2 current_path=$3 log_path=$4 control_path=$5 retries=$6
     local attempt=0 rc=1 final=failed swb status_line
     append() {
+        local now
+        now=$(date -Is)
+        printf 'updatedAt=%s\n' "$now" >> "$state_path"
+        printf 'updatedAt=%s\n' "$now" >> "$current_path"
         printf '%s=%s\n' "$1" "$2" >> "$state_path"
         printf '%s=%s\n' "$1" "$2" >> "$current_path"
     }
@@ -137,8 +141,11 @@ start() {
             exit 20
         fi
         if [[ "$old_state" == running ]]; then
-            printf 'RECOVERED_STALE=1\nOLD_RUN_ID=%s\n' "$(get_value "$current" runId")" >> "$runs/recovery.log"
-            printf 'status=stale\nrecoveredAt=%s\n' "$(date -Is)" >> "$current"
+            local recovered_at old_run_id
+            recovered_at=$(date -Is)
+            old_run_id=$(get_value "$current" runId)
+            printf 'RECOVERED_STALE=1\nOLD_RUN_ID=%s\nRECOVERED_AT=%s\n' "$old_run_id" "$recovered_at" >> "$runs/recovery.log"
+            printf 'updatedAt=%s\nstatus=stale\nrecoveredAt=%s\n' "$recovered_at" "$recovered_at" >> "$current"
         fi
     fi
     if ! mkdir "$lock" 2>/dev/null; then
@@ -151,8 +158,10 @@ start() {
     : > "$state"
     : > "$log"
     : > "$current"
-    printf 'runId=%s\nproject=%s\nstartedAt=%s\nstatus=running\nlog=%s\n' \
-        "$run_id" "$project" "$(date -Is)" "$log" | tee "$state" "$current" >/dev/null
+    local started_at
+    started_at=$(date -Is)
+    printf 'runId=%s\nproject=%s\nstartedAt=%s\nupdatedAt=%s\nstatus=running\nlog=%s\n' \
+        "$run_id" "$project" "$started_at" "$started_at" "$log" | tee "$state" "$current" >/dev/null
     export -f worker
     nohup setsid bash -lc 'worker "$@"' -- "$project" "$state" "$current" "$log" "$control" "$max_retries" \
         >/dev/null 2>&1 < /dev/null &
@@ -170,7 +179,9 @@ stop() {
         sleep 2
         kill -9 -- "-$pid" 2>/dev/null || true
     fi
-    printf 'status=stopped\nstoppedAt=%s\n' "$(date -Is)" | tee -a "$current" >/dev/null
+    local now
+    now=$(date -Is)
+    printf 'updatedAt=%s\nstatus=stopped\nstoppedAt=%s\n' "$now" "$now" | tee -a "$current" >/dev/null
     rmdir "$lock" 2>/dev/null || true
     printf 'STOPPED=1\nPID=%s\n' "$pid"
 }
