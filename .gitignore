@@ -1,0 +1,28 @@
+# Machine-specific SSH trust data.
+known_hosts
+known_hosts.old
+
+# Generated logs and simulation results.
+logs/
+results/
+
+# Private credentials and key material.
+*.pem
+*.key
+id_ed25519*
+id_rsa*
+
+# Optional machine-local configuration overrides.
+connection.local.json
+ssh_config.local
+*.local.json
+
+# Editor and operating-system metadata.
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Temporary files created during local runs.
+*.tmp
+*.bak

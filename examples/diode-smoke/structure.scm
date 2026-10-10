@@ -1,0 +1,17 @@
+; Original minimal 2D PN diode for connectivity and solver verification.
+; Dimensions in um. This is not a calibrated device design.
+(sde:clear)
+(sdegeo:create-rectangle (position 0 0 0) (position 0.5 0.2 0) "Silicon" "PRegion")
+(sdegeo:create-rectangle (position 0.5 0 0) (position 1.0 0.2 0) "Silicon" "NRegion")
+(sdegeo:define-contact-set "anode" 4 (color:rgb 1 0 0) "##")
+(sdegeo:define-contact-set "cathode" 4 (color:rgb 0 0 1) "##")
+(sdegeo:set-contact (find-edge-id (position 0 0.1 0)) "anode")
+(sdegeo:set-contact (find-edge-id (position 1.0 0.1 0)) "cathode")
+(sdedr:define-constant-profile "PDoping" "BoronActiveConcentration" 1e16)
+(sdedr:define-constant-profile-region "PlaceP" "PDoping" "PRegion")
+(sdedr:define-constant-profile "NDoping" "PhosphorusActiveConcentration" 1e16)
+(sdedr:define-constant-profile-region "PlaceN" "NDoping" "NRegion")
+(sdedr:define-refeval-window "MeshWindow" "Rectangle" (position 0 0 0) (position 1.0 0.2 0))
+(sdedr:define-refinement-size "MeshSize" 0.025 0.025 0.01 0.01)
+(sdedr:define-refinement-placement "MeshPlacement" "MeshSize" "MeshWindow")
+(sde:build-mesh "snmesh" "" "diode")

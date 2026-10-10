@@ -1,0 +1,13 @@
+{
+  "deviceExecutable": "/opt/synopsys/sentaurus/T-2022.03/bin/sdevice",
+  "environmentScript": "",
+  "remoteRunRoot": "/home/TCAD2022/codex-sentaurus/runs",
+  "verified": true,
+  "version": "T-2022.03",
+  "verificationScope": "SSH login, SDE geometry and mesh, SDevice DC sweep and curve validation passed",
+  "sshVerified": true,
+  "startupVerified": true,
+  "simulationVerified": true,
+  "licenseStatus": "server_and_vendor_up",
+  "verifiedRunId": "diode-smoke-dOGrtus3"
+}

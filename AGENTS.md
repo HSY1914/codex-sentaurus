@@ -1,0 +1,23 @@
+# Sentaurus VMware SSH project
+
+- Use `ssh.ps1` and `connection.json` as the project connection entry points.
+- For interactive login on Windows with restricted PowerShell script execution, use `connect.cmd`, which invokes ssh.exe directly using `ssh_config`. Do not change execution policy just to log in.
+- Keep `ssh_config` synchronized with `connection.json`; `ssh.ps1 -Action Configure` updates both.
+- The target is the local VMware VM named `sentaurus TCAD2022`.
+- Use `ssh.ps1 -Action Status` for service discovery; an open port is not proof of successful authentication.
+- The Linux username is `TCAD2022`, confirmed by the user. Never guess passwords.
+- Do not request passwords or private-key contents in chat. Interactive authentication belongs in the user's terminal.
+- Preserve host-key verification. Do not disable StrictHostKeyChecking or silently replace a changed host key.
+- Use `ssh.ps1 -Action Check` for read-only authenticated verification once credentials and host trust are ready.
+- Never claim connectivity is complete until an authenticated command has succeeded.
+- Do not modify VMware networks, guest operating-system settings, or existing Sentaurus projects as part of a connection check.
+- Before running simulations, identify the actual environment setup, project dependencies and requested simulation scope.
+- Keep private keys and passwords out of this project; keep large simulation outputs on the guest unless needed locally.
+- Read ACCESS_STATUS.md for the current integration status. Update it from observed evidence, never assumptions.
+- A dedicated SSH key now exists at the configured identityFile path. The user installs its public key with authorize-key.cmd; do not regenerate it or request the private key.
+- For a new computer, use setup.ps1. It writes ignored connection.local.json and ssh_config.local files. It reuses an existing key by default; use -CreateKey only as an explicit recovery path when the original key is unavailable, then authorize the replacement public key in the VM.
+- Use tcad.ps1 -Action Discover for bounded, read-only software discovery, then record verified paths in sentaurus.json.
+- tcad.ps1 -Action Probe verifies executable access only; it does not validate solver startup or license availability.
+- User has restored their working Sentaurus environment. Preserve it: do not restart license services, invoke lmreread, execute start_license.sh, or change license files, network addresses or the clock.
+- SSH authentication and both license daemons are currently verified as working. Read ACCESS_STATUS.md for the latest test results, which supersede earlier incident notes.
+- Use the currently running license service for solver calls. SSH access controls batch tools and files; it does not attach to the existing GUI window.

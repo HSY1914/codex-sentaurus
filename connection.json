@@ -1,0 +1,9 @@
+{
+  "host": "192.168.110.200",
+  "port": 22,
+  "username": "TCAD2022",
+  "identityFile": "C:\\Users\\HSY19\\.ssh\\id_ed25519_sentaurus_codex",
+  "vmName": "sentaurus TCAD2022",
+  "vmxPath": "G:\\sentaurus_TCAD\\tcad2022_虚拟机\\sentaurus TCAD2022\\sentaurus TCAD2022.vmx",
+  "vmrunPath": "E:\\VMware\\vmware17\\vmrun.exe"
+}
