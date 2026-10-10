@@ -35,3 +35,13 @@ SSH 接入的是文件与批处理工具，不是附加到已打开的 GUI 进�
 已修正为 diode_iv_des.plt，并增加独立验证，再次运行 diode-smoke-dOGrtus3 通过。
 
 此处最新实测结果取代此前“尚未授权”和“许可证不可用”的早期状态。
+
+## SWB 控制器验证（2026-10-11）
+
+- 统一入口和只读预检通过：SSH、Sentaurus T-2022.03、12 个处理器及两个许可证服务均正常。
+- 工程：`/home/TCAD2022/STDB/codex_test/test1`。
+- 运行编号：`swb-20261011-092552-12146`。
+- 结果：`STATE=done`、`EXIT_CODE=0`、3/3 节点完成、0 个失败节点。
+- 远程完成时间：`2026-10-11T09:33:47+0800`；记录耗时：475 秒。
+- 远程控制日志保留在该工程的 `.codex-controller/runs/` 目录；本地状态位于 `results/runs/<RunId>/run.json`。
+- 验证了 `SWBStatus -Json`、`SWBReport -Json`、`SWBHistory -Json` 和错误 RunId 拦截。
