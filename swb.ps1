@@ -112,6 +112,7 @@ function Save-RunMetadata {
         exitCode = Get-Field $Fields 'EXITCODE' ([string]$existing.exitCode)
         startedAt = Get-Field $Fields 'STARTEDAT' ([string]$existing.startedAt)
         updatedAt = Get-Field $Fields 'UPDATEDAT' ([string]$existing.updatedAt)
+        observedAt = Get-Field $Fields 'OBSERVEDAT' ([string]$existing.observedAt)
         finishedAt = Get-Field $Fields 'FINISHEDAT' ([string]$existing.finishedAt)
         log = Get-Field $Fields 'LOG' ([string]$existing.log)
         message = if ($Message) { $Message } else { [string]$existing.message }

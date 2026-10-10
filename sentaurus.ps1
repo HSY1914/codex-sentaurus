@@ -30,21 +30,20 @@ $knownHosts = (Join-Path $root 'known_hosts').Replace('\', '/')
 
 function Show-Help {
     $helpText = @(
-        '统一 Sentaurus 工程入口'
-        ''
-        '默认操作：'
-        '  .\sentaurus.ps1 -Action Run'
-        '    预检连接、软件和许可证，运行完整 diode smoke test，等待完成并回收结果。'
-        ''
-        '常用操作：'
-        '  .\sentaurus.ps1 -Action Preflight'
-        '  .\sentaurus.ps1 -Action SmokeStatus -RunId diode-smoke-XXXXXXXX'
-        '  .\sentaurus.ps1 -Action SWB -Project /home/TCAD2022/STDB/codex_test/test1'
-        '  .\sentaurus.ps1 -Action SWBStatus -Project /home/TCAD2022/STDB/codex_test/test1'
-        '  .\sentaurus.ps1 -Action SWBStop -Project /home/TCAD2022/STDB/codex_test/test1'
-        '  .\sentaurus.ps1 -Action SWBClean -Project /home/TCAD2022/STDB/codex_test/test1'
-        ''
-        'Run 可使用 -NoPreflight 跳过只读预检，使用 -NoFetch 保留结果在虚拟机中。'
+        'Sentaurus project controller',
+        '',
+        'Default:',
+        "  ./sentaurus.ps1 -Action Run",
+        '    Run preflight, submit the diode smoke test, wait, and fetch results.',
+        '',
+        'SWB commands:',
+        "  ./sentaurus.ps1 -Action Preflight",
+        "  ./sentaurus.ps1 -Action SWB -Project /home/TCAD2022/STDB/codex_test/test1",
+        "  ./sentaurus.ps1 -Action SWBStatus -Project /home/TCAD2022/STDB/codex_test/test1",
+        "  ./sentaurus.ps1 -Action SWBStop -Project /home/TCAD2022/STDB/codex_test/test1",
+        "  ./sentaurus.ps1 -Action SWBClean -Project /home/TCAD2022/STDB/codex_test/test1",
+        '',
+        'Run accepts -NoPreflight and -NoFetch.'
     )
     $helpText | Write-Output
 }

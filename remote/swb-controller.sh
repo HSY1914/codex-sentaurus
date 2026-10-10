@@ -75,8 +75,13 @@ status() {
     pid=$(get_value "$current" pid)
     swb=$(latest_swb_status)
     if process_alive "$pid"; then process=running; else process=stopped; fi
+    if [[ -f "$current" ]]; then
+        local observed_at
+        observed_at=$(date -Is)
+        printf 'observedAt=%s\n' "$observed_at" >> "$current"
+    fi
     printf 'STATE=%s\nPROCESS=%s\nPID=%s\nSWB_STATUS=%s\n' "$run_state" "$process" "$pid" "$swb"
-    for key in runId project startedAt updatedAt finishedAt exitCode attempt log recovery swbStatus; do
+    for key in runId project startedAt updatedAt observedAt finishedAt exitCode attempt log recovery swbStatus; do
         value=$(get_value "$current" "$key")
         [[ -n "$value" ]] && printf '%s=%s\n' "$(printf '%s' "$key" | tr '[:lower:]' '[:upper:]')" "$value"
     done
