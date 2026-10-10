@@ -1,6 +1,6 @@
 [CmdletBinding()]
 param(
-    [ValidateSet('Run', 'Status', 'Report', 'Stop', 'Clean')]
+    [ValidateSet('Run', 'Status', 'Report', 'History', 'Stop', 'Clean')]
     [string]$Action = 'Run',
     [string]$Project = '/home/TCAD2022/STDB/codex_test/test1',
     [string]$RunId,
@@ -11,7 +11,10 @@ param(
     [ValidateRange(1, 1440)]
     [int]$TimeoutMinutes = 240,
     [ValidateRange(0, 3650)]
-    [int]$KeepDays = 14
+    [int]$KeepDays = 14,
+    [ValidateRange(1, 100)]
+    [int]$Limit = 10,
+    [switch]$Json
 )
 
 $ErrorActionPreference = 'Stop'
@@ -138,6 +141,19 @@ function Assert-RunId([string]$Value) {
     }
 }
 
+function Get-RunHistory {
+    if (-not (Test-Path -LiteralPath $runStateDirectory)) { return @() }
+    @(Get-ChildItem -LiteralPath $runStateDirectory -Directory -ErrorAction SilentlyContinue |
+        ForEach-Object {
+            $path = Join-Path $_.FullName 'run.json'
+            if (Test-Path -LiteralPath $path) {
+                Get-Content -LiteralPath $path -Raw -Encoding UTF8 | ConvertFrom-Json
+            }
+        } |
+        Sort-Object -Property @{Expression={ try { [datetime]$_.clientUpdatedAt } catch { [datetime]::MinValue } }; Descending=$true} |
+        Select-Object -First $Limit)
+}
+
 function Invoke-WithRetry([string]$RemoteAction, [int]$Attempts = 3) {
     for ($try = 1; $try -le $Attempts; $try++) {
         $result = Invoke-Controller $RemoteAction
@@ -161,6 +177,19 @@ if ($Action -eq 'Status') {
         $statusRunId = [string](Get-Content -LiteralPath $latestStatePath -Raw -Encoding UTF8 | ConvertFrom-Json).runId
     }
     if ($statusRunId) { Save-RunMetadata -RunId $statusRunId -Fields $fields }
+    exit 0
+}
+
+if ($Action -eq 'History') {
+    $history = @(Get-RunHistory)
+    if ($Json) {
+        $history | ConvertTo-Json -Depth 5
+    } else {
+        if (-not $history) { Write-Output 'No local SWB run history.' }
+        foreach ($item in $history) {
+            Write-Output ("{0} state={1} nodes={2}/{3} failed={4} updated={5}" -f $item.runId, $item.state, $item.nodesDone, $item.nodesTotal, $item.nodesFailed, $item.clientUpdatedAt)
+        }
+    }
     exit 0
 }
 
