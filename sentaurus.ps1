@@ -229,12 +229,14 @@ switch ($Action) {
     'SWBStatus' {
         $statusArguments = @('-Action', 'Status', '-Project', $Project, '-RetryCount', [string]$RetryCount)
         if ($RunId) { $statusArguments += @('-RunId', $RunId) }
+        if ($Json) { $statusArguments += '-Json' }
         Invoke-ProjectScript -Script 'swb.ps1' -Arguments $statusArguments
         break
     }
     'SWBReport' {
         $reportArguments = @('-Action', 'Report', '-Project', $Project, '-RetryCount', [string]$RetryCount)
         if ($RunId) { $reportArguments += @('-RunId', $RunId) }
+        if ($Json) { $reportArguments += '-Json' }
         Invoke-ProjectScript -Script 'swb.ps1' -Arguments $reportArguments
         break
     }

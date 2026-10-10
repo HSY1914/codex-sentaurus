@@ -111,7 +111,7 @@ Codex 可以继续通过它已验证可用的执行环境调用这些控制入�
 
 `-NoPreflight` 可跳过只读预检，`-NoFetch` 可保留结果在虚拟机中。统一入口复用现有的 `ssh.ps1`、`tcad.ps1` 和 `swb.ps1`，不会重启许可证服务，也不会修改 VMware 网络、许可证文件或系统时间。
 
-SWB 运行会生成唯一 `RunId`，并在本地 `results/runs/<RunId>/run.json` 记录状态。字段包括 `startedAt`、远程 `updatedAt`、本地 `observedAt`、`finishedAt`、节点计数、退出码和控制日志路径；`results/latest-swb.json` 保存最近一次运行。`SWBHistory -Json` 可在断线后恢复最近运行信息，`SWBReport` 读取远程控制日志和节点错误摘要。
+SWB 运行会生成唯一 `RunId`，并在本地 `results/runs/<RunId>/run.json` 记录状态。字段包括 `startedAt`、远程 `updatedAt`、本地 `observedAt`、`finishedAt`、`durationSeconds`、节点计数、退出码和控制日志路径；`results/latest-swb.json` 保存最近一次运行。`SWBStatus -Json` 和 `SWBReport -Json` 返回机器可读状态，`SWBHistory -Json` 可在断线后恢复最近运行信息，`SWBReport` 读取远程控制日志和节点错误摘要。
 
 ## 配置
 

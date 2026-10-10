@@ -108,6 +108,14 @@ function Save-RunMetadata {
         [pscustomobject]@{}
     }
     $state = if ($StateOverride) { $StateOverride } else { Get-Field $Fields 'STATE' ([string]$existing.state) }
+    $startedAt = Get-FieldAny $Fields @('STARTED_AT', 'STARTEDAT') ([string]$existing.startedAt)
+    $finishedAt = Get-FieldAny $Fields @('FINISHED_AT', 'FINISHEDAT') ([string]$existing.finishedAt)
+    $durationSeconds = [string]$existing.durationSeconds
+    try {
+        if ($startedAt -and $finishedAt) {
+            $durationSeconds = [string][int][Math]::Round(([DateTimeOffset]$finishedAt - [DateTimeOffset]$startedAt).TotalSeconds)
+        }
+    } catch { }
     $metadata = [ordered]@{
         runId = $RunId
         project = Get-Field $Fields 'PROJECT' ([string]$existing.project)
@@ -122,10 +130,11 @@ function Save-RunMetadata {
         nodesFailed = Get-Field $Fields 'NODES_FAILED' ([string]$existing.nodesFailed)
         attempt = Get-Field $Fields 'ATTEMPT' ([string]$existing.attempt)
         exitCode = Get-Field $Fields 'EXITCODE' ([string]$existing.exitCode)
-        startedAt = Get-FieldAny $Fields @('STARTED_AT', 'STARTEDAT') ([string]$existing.startedAt)
+        startedAt = $startedAt
         updatedAt = Get-FieldAny $Fields @('UPDATED_AT', 'UPDATEDAT') ([string]$existing.updatedAt)
         observedAt = Get-FieldAny $Fields @('OBSERVED_AT', 'OBSERVEDAT') ([string]$existing.observedAt)
-        finishedAt = Get-FieldAny $Fields @('FINISHED_AT', 'FINISHEDAT') ([string]$existing.finishedAt)
+        finishedAt = $finishedAt
+        durationSeconds = $durationSeconds
         log = Get-Field $Fields 'LOG' ([string]$existing.log)
         message = if ($Message) { $Message } else { [string]$existing.message }
         clientUpdatedAt = (Get-Date).ToString('o')
@@ -166,8 +175,8 @@ function Invoke-WithRetry([string]$RemoteAction, [int]$Attempts = 3) {
 if ($Action -eq 'Status') {
     Assert-RunId $RunId
     $result = Invoke-WithRetry 'status'
-    $result.Output | Write-Output
     if ($result.ExitCode -ne 0) { throw "Remote SWB status failed (exit $($result.ExitCode))." }
+    if (-not $Json) { $result.Output | Write-Output }
     $fields = Parse-Fields $result.Output
     $statusRunId = Get-FieldAny $fields @('RUN_ID', 'RUNID')
     if ($RunId -and $statusRunId -and $RunId -ne $statusRunId) {
@@ -177,6 +186,13 @@ if ($Action -eq 'Status') {
         $statusRunId = [string](Get-Content -LiteralPath $latestStatePath -Raw -Encoding UTF8 | ConvertFrom-Json).runId
     }
     if ($statusRunId) { Save-RunMetadata -RunId $statusRunId -Fields $fields }
+    if ($Json) {
+        if ($statusRunId -and (Test-Path -LiteralPath (Join-Path (Join-Path $runStateDirectory $statusRunId) 'run.json'))) {
+            Get-Content -Raw -LiteralPath (Join-Path (Join-Path $runStateDirectory $statusRunId) 'run.json')
+        } else {
+            $fields | ConvertTo-Json -Depth 4
+        }
+    }
     exit 0
 }
 
@@ -196,8 +212,8 @@ if ($Action -eq 'History') {
 if ($Action -eq 'Report') {
     Assert-RunId $RunId
     $result = Invoke-WithRetry 'report'
-    $result.Output | Write-Output
     if ($result.ExitCode -ne 0) { throw "Remote SWB report failed (exit $($result.ExitCode))." }
+    if (-not $Json) { $result.Output | Write-Output }
     $fields = Parse-Fields $result.Output
     $reportRunId = Get-FieldAny $fields @('RUN_ID', 'RUNID')
     if ($RunId -and $reportRunId -and $RunId -ne $reportRunId) {
@@ -207,6 +223,9 @@ if ($Action -eq 'Report') {
         $reportRunId = [string](Get-Content -LiteralPath $latestStatePath -Raw -Encoding UTF8 | ConvertFrom-Json).runId
     }
     if ($reportRunId) { Save-RunMetadata -RunId $reportRunId -Fields $fields }
+    if ($Json -and $reportRunId) {
+        Get-Content -Raw -LiteralPath (Join-Path (Join-Path $runStateDirectory $reportRunId) 'run.json')
+    }
     exit 0
 }
 
