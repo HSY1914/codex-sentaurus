@@ -1,6 +1,6 @@
 [CmdletBinding()]
 param(
-    [ValidateSet('Run', 'Smoke', 'Preflight', 'Check', 'Version', 'License', 'Probe', 'SmokeStatus', 'SWB', 'SWBStatus', 'SWBStop', 'SWBClean', 'Help')]
+    [ValidateSet('Run', 'Smoke', 'Preflight', 'Check', 'Version', 'License', 'Probe', 'SmokeStatus', 'SWB', 'SWBStatus', 'SWBReport', 'SWBStop', 'SWBClean', 'Help')]
     [string]$Action = 'Run',
     [string]$Project = '/home/TCAD2022/STDB/codex_test/test1',
     [string]$RunId,
@@ -40,6 +40,7 @@ function Show-Help {
         "  ./sentaurus.ps1 -Action Preflight",
         "  ./sentaurus.ps1 -Action SWB -Project /home/TCAD2022/STDB/codex_test/test1",
         "  ./sentaurus.ps1 -Action SWBStatus -Project /home/TCAD2022/STDB/codex_test/test1",
+        "  ./sentaurus.ps1 -Action SWBReport -Project /home/TCAD2022/STDB/codex_test/test1",
         "  ./sentaurus.ps1 -Action SWBStop -Project /home/TCAD2022/STDB/codex_test/test1",
         "  ./sentaurus.ps1 -Action SWBClean -Project /home/TCAD2022/STDB/codex_test/test1",
         '',
@@ -214,11 +215,21 @@ switch ($Action) {
         break
     }
     'SWBStatus' {
-        Invoke-ProjectScript -Script 'swb.ps1' -Arguments @('-Action', 'Status', '-Project', $Project, '-RetryCount', [string]$RetryCount)
+        $statusArguments = @('-Action', 'Status', '-Project', $Project, '-RetryCount', [string]$RetryCount)
+        if ($RunId) { $statusArguments += @('-RunId', $RunId) }
+        Invoke-ProjectScript -Script 'swb.ps1' -Arguments $statusArguments
+        break
+    }
+    'SWBReport' {
+        $reportArguments = @('-Action', 'Report', '-Project', $Project, '-RetryCount', [string]$RetryCount)
+        if ($RunId) { $reportArguments += @('-RunId', $RunId) }
+        Invoke-ProjectScript -Script 'swb.ps1' -Arguments $reportArguments
         break
     }
     'SWBStop' {
-        Invoke-ProjectScript -Script 'swb.ps1' -Arguments @('-Action', 'Stop', '-Project', $Project, '-RetryCount', [string]$RetryCount)
+        $stopArguments = @('-Action', 'Stop', '-Project', $Project, '-RetryCount', [string]$RetryCount)
+        if ($RunId) { $stopArguments += @('-RunId', $RunId) }
+        Invoke-ProjectScript -Script 'swb.ps1' -Arguments $stopArguments
         break
     }
     'SWBClean' {

@@ -1,8 +1,9 @@
 [CmdletBinding()]
 param(
-    [ValidateSet('Run', 'Status', 'Stop', 'Clean')]
+    [ValidateSet('Run', 'Status', 'Report', 'Stop', 'Clean')]
     [string]$Action = 'Run',
     [string]$Project = '/home/TCAD2022/STDB/codex_test/test1',
+    [string]$RunId,
     [ValidateRange(0, 10)]
     [int]$RetryCount = 1,
     [ValidateRange(2, 3600)]
@@ -77,6 +78,14 @@ function Get-Field([hashtable]$Fields, [string]$Name, [string]$Fallback = '') {
     return $Fallback
 }
 
+function Get-FieldAny([hashtable]$Fields, [string[]]$Names, [string]$Fallback = '') {
+    foreach ($name in $Names) {
+        $value = Get-Field $Fields $name
+        if ($value) { return $value }
+    }
+    return $Fallback
+}
+
 function Save-RunMetadata {
     param(
         [Parameter(Mandatory)]
@@ -110,10 +119,10 @@ function Save-RunMetadata {
         nodesFailed = Get-Field $Fields 'NODES_FAILED' ([string]$existing.nodesFailed)
         attempt = Get-Field $Fields 'ATTEMPT' ([string]$existing.attempt)
         exitCode = Get-Field $Fields 'EXITCODE' ([string]$existing.exitCode)
-        startedAt = Get-Field $Fields 'STARTEDAT' ([string]$existing.startedAt)
-        updatedAt = Get-Field $Fields 'UPDATEDAT' ([string]$existing.updatedAt)
-        observedAt = Get-Field $Fields 'OBSERVEDAT' ([string]$existing.observedAt)
-        finishedAt = Get-Field $Fields 'FINISHEDAT' ([string]$existing.finishedAt)
+        startedAt = Get-FieldAny $Fields @('STARTED_AT', 'STARTEDAT') ([string]$existing.startedAt)
+        updatedAt = Get-FieldAny $Fields @('UPDATED_AT', 'UPDATEDAT') ([string]$existing.updatedAt)
+        observedAt = Get-FieldAny $Fields @('OBSERVED_AT', 'OBSERVEDAT') ([string]$existing.observedAt)
+        finishedAt = Get-FieldAny $Fields @('FINISHED_AT', 'FINISHEDAT') ([string]$existing.finishedAt)
         log = Get-Field $Fields 'LOG' ([string]$existing.log)
         message = if ($Message) { $Message } else { [string]$existing.message }
         clientUpdatedAt = (Get-Date).ToString('o')
@@ -121,6 +130,12 @@ function Save-RunMetadata {
     $json = $metadata | ConvertTo-Json -Depth 4
     Set-Content -LiteralPath $runPath -Value $json -Encoding UTF8
     Set-Content -LiteralPath $latestStatePath -Value $json -Encoding UTF8
+}
+
+function Assert-RunId([string]$Value) {
+    if ($Value -and $Value -notmatch '^swb-[0-9]{8}-[0-9]{6}-[0-9]+$') {
+        throw "Invalid SWB run ID: $Value"
+    }
 }
 
 function Invoke-WithRetry([string]$RemoteAction, [int]$Attempts = 3) {
@@ -133,11 +148,15 @@ function Invoke-WithRetry([string]$RemoteAction, [int]$Attempts = 3) {
 }
 
 if ($Action -eq 'Status') {
+    Assert-RunId $RunId
     $result = Invoke-WithRetry 'status'
     $result.Output | Write-Output
     if ($result.ExitCode -ne 0) { throw "Remote SWB status failed (exit $($result.ExitCode))." }
     $fields = Parse-Fields $result.Output
-    $statusRunId = Get-Field $fields 'RUN_ID'
+    $statusRunId = Get-FieldAny $fields @('RUN_ID', 'RUNID')
+    if ($RunId -and $statusRunId -and $RunId -ne $statusRunId) {
+        throw "Requested run $RunId is not the current remote run ($statusRunId)."
+    }
     if (-not $statusRunId -and (Test-Path -LiteralPath $latestStatePath)) {
         $statusRunId = [string](Get-Content -LiteralPath $latestStatePath -Raw -Encoding UTF8 | ConvertFrom-Json).runId
     }
@@ -145,7 +164,25 @@ if ($Action -eq 'Status') {
     exit 0
 }
 
+if ($Action -eq 'Report') {
+    Assert-RunId $RunId
+    $result = Invoke-WithRetry 'report'
+    $result.Output | Write-Output
+    if ($result.ExitCode -ne 0) { throw "Remote SWB report failed (exit $($result.ExitCode))." }
+    $fields = Parse-Fields $result.Output
+    $reportRunId = Get-FieldAny $fields @('RUN_ID', 'RUNID')
+    if ($RunId -and $reportRunId -and $RunId -ne $reportRunId) {
+        throw "Requested run $RunId is not the current remote run ($reportRunId)."
+    }
+    if (-not $reportRunId -and (Test-Path -LiteralPath $latestStatePath)) {
+        $reportRunId = [string](Get-Content -LiteralPath $latestStatePath -Raw -Encoding UTF8 | ConvertFrom-Json).runId
+    }
+    if ($reportRunId) { Save-RunMetadata -RunId $reportRunId -Fields $fields }
+    exit 0
+}
+
 if ($Action -eq 'Stop') {
+    Assert-RunId $RunId
     $result = Invoke-WithRetry 'stop'
     $result.Output | Write-Output
     if ($result.ExitCode -ne 0) { throw "Remote SWB stop failed (exit $($result.ExitCode))." }

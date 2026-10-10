@@ -83,7 +83,18 @@ status() {
     printf 'STATE=%s\nPROCESS=%s\nPID=%s\nSWB_STATUS=%s\n' "$run_state" "$process" "$pid" "$swb"
     for key in runId project startedAt updatedAt observedAt finishedAt exitCode attempt log recovery swbStatus; do
         value=$(get_value "$current" "$key")
-        [[ -n "$value" ]] && printf '%s=%s\n' "$(printf '%s' "$key" | tr '[:lower:]' '[:upper:]')" "$value"
+        [[ -n "$value" ]] || continue
+        case "$key" in
+            runId) output_key=RUN_ID ;;
+            startedAt) output_key=STARTED_AT ;;
+            updatedAt) output_key=UPDATED_AT ;;
+            observedAt) output_key=OBSERVED_AT ;;
+            finishedAt) output_key=FINISHED_AT ;;
+            exitCode) output_key=EXIT_CODE ;;
+            swbStatus) output_key=SWB_STATUS ;;
+            *) output_key=$(printf '%s' "$key" | tr '[:lower:]' '[:upper:]') ;;
+        esac
+        printf '%s=%s\n' "$output_key" "$value"
     done
     node_counts
 }
